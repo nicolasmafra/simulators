@@ -1,0 +1,79 @@
+<html>
+	<head>
+		<title>Emulator</title>
+		<style>
+
+body {
+	margin: 0;
+	border: 0;
+}
+
+		</style>
+	</head>
+
+	<body>
+		<script src="initial_state.js"></script>
+		<script src="mechanics.js"></script>
+		<script>
+
+const bodies = [];
+
+function forEachBodyPair(f) {
+	bodies.forEach((a,i) => bodies.forEach((b, j) => {
+		if (j > i) {
+			f(a, b);
+		}
+	}));
+}
+
+const deltaTime = 0.02;
+
+		</script>
+		<script type="module">
+
+import * as THREE from 'https://unpkg.com/three/build/three.module.js';
+
+const renderer = new THREE.WebGLRenderer();
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+camera.position.z = 20;
+
+scene.add(new THREE.AmbientLight(0xffffff));
+
+const geometry = new THREE.SphereGeometry();
+const material = new THREE.MeshPhongMaterial( { color: 0xffffff, transparent: true, opacity: 0.8 } );
+
+initialState.forEach(state => {
+	
+	const item = new THREE.Mesh( geometry, material );
+	item.scale.setScalar(state.radius);
+	item.userData = JSON.parse(JSON.stringify(state));
+	item.userData.isItem = true;
+	scene.add( item );
+	
+	item.position.set(...item.userData.position);
+	delete item.userData.position;
+	item.userData.velocity = new THREE.Vector3(...item.userData.velocity);
+});
+
+function loop() {
+	
+	bodies.length = 0;
+	bodies.push(...scene.children.filter(x => x.userData.isItem).map(x => {
+		x.userData.position = x.position;
+		return x.userData;
+	}));
+	change(deltaTime);
+	
+	requestAnimationFrame(loop);
+	renderer.render(scene, camera);
+}
+
+loop();
+
+		</script>
+	</body>
+</html>
