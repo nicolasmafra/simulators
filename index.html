@@ -6,12 +6,17 @@
 body {
 	margin: 0;
 	border: 0;
+	color: white;
 }
 
 		</style>
 	</head>
 
 	<body>
+		<div id="ui" style="position:fixed">
+			Kinetic Energy: <div id="kineticEnergyBar" style="background-color:blue">
+				<span id="kineticEnergy"></span>J</div>
+		</div>
 		<script src="initial_state.js"></script>
 		<script src="mechanics.js"></script>
 		<script>
@@ -26,12 +31,29 @@ function forEachBodyPair(f) {
 	}));
 }
 
+var zeroVector = null;
+
+function newVector() {
+	return zeroVector.clone();
+}
+
 const deltaTime = 0.02;
 
 		</script>
+		<script type="importmap">
+{
+	"imports": {
+	  "three": "https://unpkg.com/three/build/three.module.js",
+	  "three/addons/": "https://unpkg.com/three/examples/jsm/"
+	}
+}
+		</script>
 		<script type="module">
 
-import * as THREE from 'https://unpkg.com/three/build/three.module.js';
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+zeroVector = new THREE.Vector3();
 
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -43,8 +65,15 @@ camera.position.z = 20;
 
 scene.add(new THREE.AmbientLight(0xffffff));
 
+const controls = new OrbitControls( camera, renderer.domElement );
+
 const geometry = new THREE.SphereGeometry();
-const material = new THREE.MeshPhongMaterial( { color: 0xffffff, transparent: true, opacity: 0.8 } );
+const material = new THREE.MeshPhongMaterial({
+	color: 0xffffff,
+	transparent: true,
+	opacity: 0.8,
+	depthWrite: false
+});
 
 initialState.forEach(state => {
 	
@@ -68,8 +97,26 @@ function loop() {
 	}));
 	change(deltaTime);
 	
-	requestAnimationFrame(loop);
+	calcKineticEnergy();
+	
+	controls.update();
 	renderer.render(scene, camera);
+	requestAnimationFrame(loop);
+}
+
+var kineticEnergyPrevious = new Array(5).fill(0);
+function calcKineticEnergy() {
+	
+	var kineticEnergy = 0;
+	bodies.forEach(x => kineticEnergy += x.mass * x.velocity.lengthSq());
+	kineticEnergyPrevious.push(kineticEnergy);
+	kineticEnergyPrevious.shift();
+	
+	var kineticEnergySmooth = 0;
+	kineticEnergyPrevious.forEach(x => kineticEnergySmooth+=x);
+	kineticEnergySmooth /= kineticEnergyPrevious.length;
+	document.getElementById("kineticEnergy").innerHTML = kineticEnergySmooth.toFixed(2);
+	document.getElementById("kineticEnergyBar").style.width = 2*kineticEnergySmooth;
 }
 
 loop();
