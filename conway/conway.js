@@ -2,6 +2,9 @@ class Conway {
     width;
     height;
     delay = 50;
+    ticks = 0;
+    lastTime;
+    deltas = [];
 
     constructor(width, height) {
         this.width = width || 80;
@@ -11,35 +14,50 @@ class Conway {
         this.nextState = Array(size);
     }
 
-    run() {
-        this.executeStep();
+    start() {
+        this.lastTime = new Date();
         this.loop();
     }
 
     loop() {
-        if (this.delay) this.promise = new Promise(() => setTimeout(() => this.run(), this.delay));
+        this.executeStep();
+        this.promise = new Promise(() => setTimeout(() => this.loop(), this.delay));
     }
 
     executeStep() {
-        this.iterate((i,x,y) => this.nextState[i] = this.isAlive(x,y));
-        this.iterate(i => this.state[i] = this.nextState[i]);
+        this.log();
+        this.iterate((i,x,y) => this.nextState[i] = this.isAlive(x,y) ? 1 : 0);
+        this.nextState.forEach((v,i) => this.state[i] = v);
         this.print();
+    }
+
+    log() {
+        this.ticks++;
+        let now = new Date();
+        let delta = now - this.lastTime;
+        this.lastTime = now;
+        this.deltas.push(delta);
+        if (this.deltas.length > 60) this.deltas.shift();
+        let avg = this.deltas.reduce((a, b) => a + b, 0) / this.deltas.length;
+        if (this.ticks % 60 == 0) {
+            console.log('avg delta: ' + Math.floor(avg*10)/10);
+        }
     }
     
     isAlive(x, y) {
-        let current = this.get(x, y);
         let liveNeighbors = this.liveNeighbors(x, y);
-        return liveNeighbors == 3 || (current && liveNeighbors == 2);
+        return liveNeighbors == 3 || (liveNeighbors == 2 && this.get(x, y));
     }
 
     liveNeighbors(x, y) {
-        let liveNeighbors = 0;
-        for (var i = -1; i <= 1; i++) {
-            for (var j = -1; j <= 1; j++) {
-                if ((i != 0 || j != 0) && this.get(x + i, y + j)) liveNeighbors++;
-            }
-        }
-        return liveNeighbors;
+        return this.get(x-1,y-1)
+            +  this.get(x  ,y-1)
+            +  this.get(x+1,y-1)
+            +  this.get(x-1,y  )
+            +  this.get(x+1,y  )
+            +  this.get(x-1,y+1)
+            +  this.get(x  ,y+1)
+            +  this.get(x+1,y+1);
     }
     
     iterate(fn) {
@@ -52,8 +70,8 @@ class Conway {
     }
     
     get(x, y) {
-        x = (x + this.width) % this.width;
-        y = (y + this.height) % this.height;
+        if (x < 0 || x >= this.width) x = (x + this.width) % this.width;
+        if (y < 0 || y >= this.height) y = (y + this.height) % this.height;
         return this.state[x + this.width * y];
     }
     
@@ -74,7 +92,7 @@ class Conway {
     }
     
     randomize(factor = 0.3) {
-        this.iterate(i => this.state[i] = Math.random() < factor);
+        this.iterate(i => this.state[i] = Math.random() < factor ? 1 : 0);
     }
     
     glider() {
@@ -89,5 +107,5 @@ class Conway {
 if (require) {
     let conway = new Conway();
     conway.randomize();
-    conway.run();
+    conway.start();
 }

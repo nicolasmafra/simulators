@@ -5,37 +5,53 @@
 
         <style>
             html, body, canvas {
-                background-color: #003300;
                 margin: 0;
                 width: 100%;
                 height: 100%;
                 overflow: hidden;
             }
+            #grid {
+                position: fixed;
+                width: 100%;
+                height: 100%;
+                background-image:
+                    linear-gradient(#00330088 1px, transparent 1px),
+                    linear-gradient(90deg, #00330088 1px, transparent 1px);
+                background-size: 8px 8px;
+            }
         </style>
     </head>
     <body>
+        <div id="grid"></div>
         <canvas id="canvas"></canvas>
         <script src="conway.js"></script>
         <script>
-            let width = window.innerWidth;
-            let height = window.innerHeight;
             let zoom = 8;
-            let cell = zoom - 1;
+            let width = Math.floor(window.innerWidth / zoom);
+            let height = Math.floor(window.innerHeight / zoom);
 
             let canvas = document.getElementById('canvas');
-            let ctx = canvas.getContext("2d");
+            let ctx = canvas.getContext("2d", { alpha: false });
             canvas.width = width;
             canvas.height = height;
-            let conway = new Conway(Math.floor(width / zoom), Math.floor(height / zoom));
+            let img = new ImageData(width, height);
+            img.data.forEach((_, i) => img.data[i] = 255);
+
+            let conway = new Conway(width, height);
+            conway.delay = 0;
             conway.print = () => {
                 ctx.clearRect(0, 0, width, height);
-                conway.iterate((_,x,y) => {
-                    ctx.fillStyle = conway.get(x,y) ? 'white' : 'black';
-                    ctx.fillRect(zoom*x, zoom*y, cell, cell);
+                conway.iterate((i,x,y) => {
+                    let value = conway.get(x,y) ? 255 : 0;
+                    let i4 = i*4;
+                    img.data[i4  ] = value;
+                    img.data[i4+1] = value;
+                    img.data[i4+2] = value;
                 });
+                ctx.putImageData(img, 0, 0);
             }
             conway.randomize();
-            conway.run();
+            conway.start();
         </script>
     </body>
 </html>
