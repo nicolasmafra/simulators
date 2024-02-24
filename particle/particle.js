@@ -6,6 +6,7 @@ const X1 = 0;
 const X2 = 1;
 const Y1 = 2;
 const Y2 = 3;
+const parityMod = 3;
 
 class Particle {
     width;
@@ -35,7 +36,8 @@ class Particle {
 
     executeStep() {
         this.log();
-        this.parity = Math.random() < 0.5;
+        this.typeParity = Math.random() < 0.5;
+        this.positionParity = Math.floor(parityMod*Math.random());
         this.iterate((n,x,y) => this.translate(n,x,y));
         this.copy();
         this.iterate((n,x,y) => this.update(n,x,y));
@@ -57,21 +59,31 @@ class Particle {
     }
 
     update(n, x, y) {
+        let parity = this.getPositionParity(n);
         let x1 = this.get(x, y, X1);
         let x2 = this.get(x, y, X2);
         let y1 = this.get(x, y, Y1);
         let y2 = this.get(x, y, Y2);
 
-        if (x1 == NEUTRAL && x2 == NEUTRAL) {
-            this.change(x, y, 0, 0, this.typeParity(0), this.typeParity(1));
+        if (!parity) {
+            if (x1 && x2) this.change(x, y, x2, x1,  0,  0);
+            if (y1 && y2) this.change(x, y,  0,  0, y2, y1);
+            if (x1 && y1) this.change(x, y, y1, x1,  0,  0);
+            if (y1 && x2) this.change(x, y,  0, y1, x2,  0);
+            if (x2 && y2) this.change(x, y,  0,  0, y2, x2);
+            if (y2 && x1) this.change(x, y, y2,  0,  0, x1);
         }
-        if (y1 == NEUTRAL && y2 == NEUTRAL) {
-            this.change(x, y, this.typeParity(0), this.typeParity(1), 0, 0);
+
+        if (!parity && x1 == NEUTRAL && x2 == NEUTRAL) {
+            this.change(x, y, 0, 0, this.getTypeParity(0), this.getTypeParity(1));
         }
-        if (x1 == this.typeParity(1) && x2 == this.typeParity(0)) {
+        if (!parity && y1 == NEUTRAL && y2 == NEUTRAL) {
+            this.change(x, y, this.getTypeParity(0), this.getTypeParity(1), 0, 0);
+        }
+        if (parity && x1 == this.getTypeParity(1) && x2 == this.getTypeParity(0)) {
             this.change(x, y, 0, 0, NEUTRAL, NEUTRAL);
         }
-        if (y1 == this.typeParity(1) && y2 == this.typeParity(0)) {
+        if (parity && y1 == this.getTypeParity(1) && y2 == this.getTypeParity(0)) {
             this.change(x, y, NEUTRAL, NEUTRAL, 0, 0);
         }
     }
@@ -83,10 +95,14 @@ class Particle {
         this.set(x, y, Y2, y2);
     }
 
-    typeParity(flip) {
+    getTypeParity(flip) {
         return flip
-            ? (this.parity ? NEGATIVE : POSITIVE)
-            : (this.parity ? POSITIVE : NEGATIVE);
+            ? (this.typeParity ? NEGATIVE : POSITIVE)
+            : (this.typeParity ? POSITIVE : NEGATIVE);
+    }
+
+    getPositionParity(n) {
+        return n % parityMod == this.positionParity;
     }
 
     copy() {
@@ -96,10 +112,19 @@ class Particle {
     }
 
     translate(n, x, y) {
-        this.nextState[n  ] = this.get(x-1, y  , 0);
-        this.nextState[n+1] = this.get(x+1, y  , 1);
-        this.nextState[n+2] = this.get(x  , y-1, 2);
-        this.nextState[n+3] = this.get(x  , y+1, 3);
+        let x1 = this.get(x, y, X1);
+        let x2 = this.get(x, y, X2);
+        let y1 = this.get(x, y, Y1);
+        let y2 = this.get(x, y, Y2);
+
+        this.set(x+this.speed(x1), y               , X1, x1);
+        this.set(x-this.speed(x2), y               , X2, x2);
+        this.set(x               , y+this.speed(y1), Y1, y1);
+        this.set(x               , y-this.speed(y2), Y2, y2);
+    }
+
+    speed(type) {
+        return 1;//type == NEUTRAL ? 2 : 1;
     }
     
     iterate(fn) {
@@ -136,11 +161,11 @@ class Particle {
     set(x, y, dir, type) {
         x = (x + this.width) % this.width;
         y = (y + this.height) % this.height;
-        let i = dataLength * (x + this.width * y);
-        this.nextState[i + dir] = type;
+        let n = dataLength * (x + this.width * y);
+        this.nextState[n + dir] = type;
     }
     
-    randomize(factor = 0.001) {
+    randomize(factor = 0.002) {
         for (var i = 0; i < this.size; i++) {
             let type = 1;//Math.floor(3 * Math.random());
             this.state[i] = Math.random() < factor ? type : 0;
