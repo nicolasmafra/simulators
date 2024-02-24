@@ -63,16 +63,16 @@ class Particle {
         let y2 = this.get(x, y, Y2);
 
         if (x1 == NEUTRAL && x2 == NEUTRAL) {
-            this.change(0, 0, this.typeParity(0), this.typeParity(1));
+            this.change(x, y, 0, 0, this.typeParity(0), this.typeParity(1));
         }
         if (y1 == NEUTRAL && y2 == NEUTRAL) {
-            this.change(this.typeParity(0), this.typeParity(1), 0, 0);
+            this.change(x, y, this.typeParity(0), this.typeParity(1), 0, 0);
         }
         if (x1 == this.typeParity(1) && x2 == this.typeParity(0)) {
-            this.change(0, 0, NEUTRAL, NEUTRAL);
+            this.change(x, y, 0, 0, NEUTRAL, NEUTRAL);
         }
         if (y1 == this.typeParity(1) && y2 == this.typeParity(0)) {
-            this.change(NEUTRAL, NEUTRAL, 0, 0);
+            this.change(x, y, NEUTRAL, NEUTRAL, 0, 0);
         }
     }
 
