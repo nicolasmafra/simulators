@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Particle</title>
+
+        <style>
+            html, body, canvas {
+                margin: 0;
+                width: 100%;
+                height: 100%;
+                overflow: hidden;
+            }
+            #grid {
+                position: fixed;
+                width: 100%;
+                height: 100%;
+                background-image:
+                    linear-gradient(#00330088 1px, transparent 1px),
+                    linear-gradient(90deg, #00330088 1px, transparent 1px);
+                background-size: 8px 8px;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="grid"></div>
+        <canvas id="canvas"></canvas>
+        <script src="particle.js"></script>
+        <script>
+            let zoom = 8;
+            let width = Math.floor(window.innerWidth / zoom);
+            let height = Math.floor(window.innerHeight / zoom);
+
+            let canvas = document.getElementById('canvas');
+            let ctx = canvas.getContext("2d", { alpha: false });
+            canvas.width = width;
+            canvas.height = height;
+            let img = new ImageData(width, height);
+            img.data.forEach((_, i) => img.data[i] = 255);
+
+            function clamp(value) {
+                return value > 255 ? 255 : value;
+            }
+
+            let particle = new Particle(width, height);
+            particle.delay = 50;
+            particle.print = () => {
+                ctx.clearRect(0, 0, width, height);
+                particle.iterate((n,x,y) => {
+                    img.data[n  ] = clamp(255 * particle.getByType(x,y,POSITIVE));
+                    img.data[n+1] = clamp(255 * particle.getByType(x,y,NEUTRAL));
+                    img.data[n+2] = clamp(255 * particle.getByType(x,y,NEGATIVE));
+                });
+                ctx.putImageData(img, 0, 0);
+            }
+            particle.randomize();
+            particle.start();
+        </script>
+    </body>
+</html>

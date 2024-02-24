@@ -84,7 +84,7 @@ class Conway {
         console.log(text);
     }
     
-    set(x, y, value = true) {
+    set(x, y, value = 1) {
         x = (x + this.width) % this.width;
         y = (y + this.height) % this.height;
         let i = x + this.width * y;
