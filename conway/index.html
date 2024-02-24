@@ -38,7 +38,7 @@
             img.data.forEach((_, i) => img.data[i] = 255);
 
             let conway = new Conway(width, height);
-            conway.delay = 0;
+            conway.delay = 50;
             conway.print = () => {
                 ctx.clearRect(0, 0, width, height);
                 conway.iterate((i,x,y) => {
