@@ -12,6 +12,7 @@ class Conway {
         const size = this.width * this.height;
         this.state = Array(size);
         this.nextState = Array(size);
+        this.oldState = Array(size);
     }
 
     start() {
@@ -29,6 +30,13 @@ class Conway {
         this.iterate((i,x,y) => this.nextState[i] = this.isAlive(x,y) ? 1 : 0);
         this.nextState.forEach((v,i) => this.state[i] = v);
         this.print();
+
+        if (this.ticks % 20 == 1) {
+            if (this.state.find((v,i) => v != this.oldState[i]) === undefined) {
+                this.randomize();
+            }
+            this.state.forEach((v,i) => this.oldState[i] = v);
+        }
     }
 
     log() {
@@ -91,7 +99,9 @@ class Conway {
         this.state[i] = value;
     }
     
-    randomize(factor = 0.3) {
+    randomize(factor) {
+        if (!factor) factor = 0.1 + 0.6 * Math.random();
+        this.ticks = 0;
         this.iterate(i => this.state[i] = Math.random() < factor ? 1 : 0);
     }
     
