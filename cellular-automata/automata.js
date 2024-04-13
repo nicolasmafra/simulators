@@ -1,18 +1,32 @@
-class Conway {
+class Automata {
+    zoom = 8;
     width;
     height;
     delay = 50;
     ticks = 0;
     lastTime;
     deltas = [];
+    colors = [
+        [0,   0,   0  ],
+        [255, 255, 255],
+    ];
 
-    constructor(width, height) {
-        this.width = width || 80;
-        this.height = height || 24;
+    constructor() {
+        this.width = Math.floor(window.innerWidth / this.zoom);
+        this.height = Math.floor(window.innerHeight / this.zoom);
+        
         const size = this.width * this.height;
         this.state = Array(size);
         this.nextState = Array(size);
         this.oldState = Array(size);
+
+        this.canvas = document.getElementById('canvas');
+        this.ctx = this.canvas.getContext("2d", { alpha: false });
+        this.canvas.width = this.width;
+        this.canvas.height = this.height;
+
+        this.img = new ImageData(this.width, this.height);
+        this.img.data.forEach((_, i) => this.img.data[i] = 255);
     }
 
     start() {
@@ -27,7 +41,7 @@ class Conway {
 
     executeStep() {
         this.log();
-        this.iterate((i,x,y) => this.nextState[i] = this.isAlive(x,y) ? 1 : 0);
+        this.iterate((i,x,y) => this.nextState[i] = this.nextValue(x,y));
         this.nextState.forEach((v,i) => this.state[i] = v);
         this.print();
 
@@ -52,22 +66,6 @@ class Conway {
         }
     }
     
-    isAlive(x, y) {
-        let liveNeighbors = this.liveNeighbors(x, y);
-        return liveNeighbors == 3 || (liveNeighbors == 2 && this.get(x, y));
-    }
-
-    liveNeighbors(x, y) {
-        return this.get(x-1,y-1)
-            +  this.get(x  ,y-1)
-            +  this.get(x+1,y-1)
-            +  this.get(x-1,y  )
-            +  this.get(x+1,y  )
-            +  this.get(x-1,y+1)
-            +  this.get(x  ,y+1)
-            +  this.get(x+1,y+1);
-    }
-    
     iterate(fn) {
         for (var y = 0; y < this.height; y++) {
             for (var x = 0; x < this.width; x++) {
@@ -84,12 +82,15 @@ class Conway {
     }
     
     print() {
-        let text = '\u001b[2J\u001b[0;0H';
-        this.iterate((i,x) => {
-            if (x == 0) text += '\n';
-            text += this.state[i] ? '▆' : ' ';
+        this.ctx.clearRect(0, 0, this.width, this.height);
+        this.iterate((i,x,y) => {
+            let color = this.colors[this.get(x,y)];
+            let i4 = i*4;
+            this.img.data[i4  ] = color[0];
+            this.img.data[i4+1] = color[1];
+            this.img.data[i4+2] = color[2];
         });
-        console.log(text);
+        this.ctx.putImageData(this.img, 0, 0);
     }
     
     set(x, y, value = 1) {
@@ -99,23 +100,8 @@ class Conway {
         this.state[i] = value;
     }
     
-    randomize(factor) {
-        if (!factor) factor = 0.1 + 0.6 * Math.random();
+    randomize() {
         this.ticks = 0;
-        this.iterate(i => this.state[i] = Math.random() < factor ? 1 : 0);
+        this.iterate(i => this.state[i] = Math.floor(this.colors.length*Math.random()));
     }
-    
-    glider() {
-        this.set(1, 0);
-        this.set(2, 1);
-        this.set(0, 2);
-        this.set(1, 2);
-        this.set(2, 2);
-    }
-}
-
-if (require) {
-    let conway = new Conway();
-    conway.randomize();
-    conway.start();
 }
