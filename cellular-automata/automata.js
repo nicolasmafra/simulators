@@ -80,6 +80,19 @@ class Automata {
         if (y < 0 || y >= this.height) y = (y + this.height) % this.height;
         return this.state[x + this.width * y];
     }
+
+    getNeighbors(x, y) {
+        return [
+            this.get(x-1,y-1),
+            this.get(x  ,y-1),
+            this.get(x+1,y-1),
+            this.get(x-1,y  ),
+            this.get(x+1,y  ),
+            this.get(x-1,y+1),
+            this.get(x  ,y+1),
+            this.get(x+1,y+1),
+        ];
+    }
     
     print() {
         this.ctx.clearRect(0, 0, this.width, this.height);
